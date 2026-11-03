@@ -1249,7 +1249,7 @@ pub fn get_custom_rendezvous_server(custom: String) -> String {
     if !config::PROD_RENDEZVOUS_SERVER.read().unwrap().is_empty() {
         return config::PROD_RENDEZVOUS_SERVER.read().unwrap().clone();
     }
-    "".to_owned()
+    "itdesk.intimelab.com.br".to_owned()
 }
 
 #[inline]
@@ -2493,6 +2493,8 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 }
 
 pub fn load_custom_client() {
+    *config::APP_NAME.write().unwrap() = "InTimeDesk".to_owned();
+    *config::PROD_RENDEZVOUS_SERVER.write().unwrap() = "itdesk.intimelab.com.br".to_owned();
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());

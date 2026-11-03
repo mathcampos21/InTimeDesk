@@ -1020,7 +1020,7 @@ class _Safety extends StatefulWidget {
 class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  bool locked = bind.mainIsInstalled();
+  bool locked = bind.mainGetUnlockPin().isNotEmpty || bind.mainIsInstalled();
   final scrollController = ScrollController();
 
   @override
@@ -1808,7 +1808,7 @@ class _Network extends StatefulWidget {
 class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  bool locked = !isWeb && bind.mainIsInstalled();
+  bool locked = !isWeb && (bind.mainGetUnlockPin().isNotEmpty || bind.mainIsInstalled());
 
   final scrollController = ScrollController();
 

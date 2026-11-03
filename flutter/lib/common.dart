@@ -3007,10 +3007,10 @@ class ServerConfig {
 
   /// from local options
   ServerConfig.fromOptions(Map<String, dynamic> options)
-      : idServer = options['custom-rendezvous-server'] ?? "",
+      : idServer = options['custom-rendezvous-server'] ?? "itdesk.intimelab.com.br",
         relayServer = options['relay-server'] ?? "",
         apiServer = options['api-server'] ?? "",
-        key = options['key'] ?? "";
+        key = options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
 }
 
 Widget dialogButton(String text,
