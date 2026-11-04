@@ -1525,6 +1525,9 @@ pub fn copy_exe_cmd(src_exe: &str, exe: &str, path: &str) -> ResultType<String> 
         "
         {main_exe}
         copy /Y \"{ORIGIN_PROCESS_EXE}\" \"{path}\\{broker_exe}\"
+        if not exist \"{exe}\" if exist \"{path}\\rustdesk.exe\" move /Y \"{path}\\rustdesk.exe\" \"{exe}\"
+        if not exist \"{exe}\" if exist \"{path}\\RustDesk.exe\" move /Y \"{path}\\RustDesk.exe\" \"{exe}\"
+        if not exist \"{exe}\" if exist \"{src_exe}\" copy /Y \"{src_exe}\" \"{exe}\"
         ",
         ORIGIN_PROCESS_EXE = win_topmost_window::ORIGIN_PROCESS_EXE,
         broker_exe = win_topmost_window::INJECTED_PROCESS_EXE,
