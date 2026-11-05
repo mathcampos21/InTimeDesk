@@ -3009,7 +3009,7 @@ class ServerConfig {
   ServerConfig.fromOptions(Map<String, dynamic> options)
       : idServer = options['custom-rendezvous-server'] ?? "itdesk.intimelab.com.br",
         relayServer = options['relay-server'] ?? "",
-        apiServer = options['api-server'] ?? "",
+        apiServer = options['api-server'] ?? "https://itdesksuport.intimelab.com.br",
         key = options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
 }
 
