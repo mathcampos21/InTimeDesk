@@ -3010,20 +3010,19 @@ class ServerConfig {
   }
 
   /// from local options
-  ServerConfig.fromOptions(Map<String, dynamic> options)
-      : idServer = options['custom-rendezvous-server'] ?? "itdesk.intimelab.com.br",
-        relayServer = options['relay-server'] ?? "",
-        apiServer = options['api-server'] ?? "https://itdesksuport.intimelab.com.br",
-        key = () {
-          var k = (options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=").toString().trim();
-          if (k.isEmpty) {
-            k = "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
-          }
-          while (k.isNotEmpty && k.length % 4 != 0) {
-            k += '=';
-          }
-          return k;
-        }();
+  ServerConfig.fromOptions(Map<String, dynamic> options) {
+    idServer = options['custom-rendezvous-server'] ?? "itdesk.intimelab.com.br";
+    relayServer = options['relay-server'] ?? "";
+    apiServer = options['api-server'] ?? "https://itdesksuport.intimelab.com.br";
+    var k = (options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=").toString().trim();
+    if (k.isEmpty) {
+      k = "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
+    }
+    while (k.isNotEmpty && k.length % 4 != 0) {
+      k += '=';
+    }
+    key = k;
+  }
 }
 
 Widget dialogButton(String text,
