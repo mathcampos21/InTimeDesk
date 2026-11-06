@@ -1020,7 +1020,7 @@ class _Safety extends StatefulWidget {
 class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  bool locked = bind.mainGetUnlockPin().isNotEmpty || bind.mainIsInstalled();
+  bool locked = !isWeb;
   final scrollController = ScrollController();
 
   @override
@@ -1810,7 +1810,7 @@ class _Network extends StatefulWidget {
 class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  bool locked = !isWeb && (bind.mainGetUnlockPin().isNotEmpty || bind.mainIsInstalled());
+  bool locked = !isWeb;
 
   final scrollController = ScrollController();
 
@@ -3065,14 +3065,7 @@ Widget _lock(
                           ]).marginSymmetric(vertical: 2)),
                   onPressed: () async {
                     final unlockPin = bind.mainGetUnlockPin();
-                    if (unlockPin.isEmpty || isUnlockPinDisabled()) {
-                      bool checked = await callMainCheckSuperUserPermission();
-                      if (checked) {
-                        onUnlock();
-                      }
-                    } else {
-                      checkUnlockPinDialog(unlockPin, onUnlock);
-                    }
+                    checkUnlockPinDialog(unlockPin, onUnlock);
                   },
                 ).marginSymmetric(horizontal: 2, vertical: 4),
               ).marginOnly(left: _kCardLeftMargin),

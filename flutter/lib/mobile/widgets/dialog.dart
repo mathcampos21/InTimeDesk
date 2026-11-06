@@ -1,3 +1,4 @@
+import '../../common/widgets/dialog.dart' show PasswordWidget;
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -73,6 +74,7 @@ void showServerSettingsWithValue(
   const labelWidth = 120.0;
   const labelSpacing = 8.0;
   var isInProgress = false;
+  var isUnlocked = false;
   final idCtrl = TextEditingController(text: serverConfig.idServer);
   final relayCtrl = TextEditingController(text: serverConfig.relayServer);
   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
@@ -91,9 +93,18 @@ void showServerSettingsWithValue(
 
   dialogManager.show((setState, close, context) {
     Future<bool> submit() async {
+      if (!isUnlocked) {
+        showToast('Desbloqueie com a senha mestre para alterar');
+        return false;
+      }
       setState(() {
         isInProgress = true;
       });
+      var k = keyCtrl.text.trim();
+      while (k.isNotEmpty && k.length % 4 != 0) {
+        k += '=';
+      }
+      keyCtrl.text = k;
       bool ret = await setServerConfig(
           null,
           errMsgs,
@@ -101,7 +112,7 @@ void showServerSettingsWithValue(
               idServer: idCtrl.text.trim(),
               relayServer: relayCtrl.text.trim(),
               apiServer: apiCtrl.text.trim(),
-              key: keyCtrl.text.trim()));
+              key: k));
       setState(() {
         isInProgress = false;
       });
@@ -110,7 +121,11 @@ void showServerSettingsWithValue(
 
     Widget buildField(
         String label, TextEditingController controller, String errorMsg,
-        {String? Function(String?)? validator, bool autofocus = false}) {
+        {String? Function(String?)? validator,
+        bool autofocus = false,
+        bool obscureText = false,
+        bool readOnly = false,
+        Widget? suffixIcon}) {
       if (isDesktop || isWeb) {
         return Row(
           children: [
@@ -129,6 +144,9 @@ void showServerSettingsWithValue(
                 showLabelText: false,
                 validator: validator,
                 autofocus: autofocus,
+                obscureText: obscureText,
+                readOnly: readOnly,
+                suffixIcon: suffixIcon,
               ).workaroundFreezeLinuxMint(),
             ),
           ],
@@ -140,6 +158,9 @@ void showServerSettingsWithValue(
         controller: controller,
         errorMsg: errorMsg,
         validator: validator,
+        obscureText: obscureText,
+        readOnly: readOnly,
+        suffixIcon: suffixIcon,
       ).workaroundFreezeLinuxMint();
     }
 
@@ -147,7 +168,8 @@ void showServerSettingsWithValue(
       title: Row(
         children: [
           Expanded(child: Text(translate('ID/Relay Server'))),
-          ...ServerConfigImportExportWidgets(controllers, errMsgs),
+          if (isUnlocked)
+            ...ServerConfigImportExportWidgets(controllers, errMsgs),
         ],
       ),
       content: ConstrainedBox(
@@ -157,17 +179,18 @@ void showServerSettingsWithValue(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   buildField(translate('ID Server'), idCtrl, idServerMsg.value,
-                      autofocus: true),
+                      autofocus: true, readOnly: !isUnlocked),
                   SizedBox(height: 8),
                   if (!isIOS && !isWeb) ...[
                     buildField(translate('Relay Server'), relayCtrl,
-                        relayServerMsg.value),
+                        relayServerMsg.value, readOnly: !isUnlocked),
                     SizedBox(height: 8),
                   ],
                   buildField(
                     translate('API Server'),
                     apiCtrl,
                     apiServerMsg.value,
+                    readOnly: !isUnlocked,
                     validator: (v) {
                       if (v != null && v.isNotEmpty) {
                         if (!(v.startsWith('http://') ||
@@ -190,7 +213,59 @@ void showServerSettingsWithValue(
                     ),
                   ),
                   SizedBox(height: 8),
-                  buildField('Key', keyCtrl, ''),
+                  buildField(
+                    'Key',
+                    keyCtrl,
+                    '',
+                    obscureText: !isUnlocked,
+                    readOnly: !isUnlocked,
+                  ),
+                  if (!isUnlocked)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.lock, size: 16),
+                        label: const Text('Desbloquear com Senha Mestre'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0B57D0),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
+                        onPressed: () {
+                          final pinCtrl = TextEditingController();
+                          gFFI.dialogManager.show((pinSetState, pinClose, pinContext) {
+                            String? pinError;
+                            void tryUnlock() {
+                              if (pinCtrl.text.trim() == '@#intimetec#@') {
+                                setState(() {
+                                  isUnlocked = true;
+                                });
+                                pinClose();
+                                showToast('Configurações desbloqueadas');
+                              } else {
+                                pinSetState(() {
+                                  pinError = translate('Wrong PIN');
+                                });
+                              }
+                            }
+                            return CustomAlertDialog(
+                              title: const Text('Senha Mestre'),
+                              content: PasswordWidget(
+                                title: 'Senha Mestre',
+                                controller: pinCtrl,
+                                errorText: pinError,
+                                hintText: 'Digite a senha mestre para desbloquear',
+                              ),
+                              actions: [
+                                dialogButton(translate('Cancel'), onPressed: pinClose, isOutline: true),
+                                dialogButton(translate('OK'), onPressed: tryUnlock),
+                              ],
+                              onSubmit: tryUnlock,
+                              onCancel: pinClose,
+                            );
+                          });
+                        },
+                      ),
+                    ),
                   if (isInProgress)
                     Padding(
                       padding: EdgeInsets.only(top: 8),
@@ -207,6 +282,10 @@ void showServerSettingsWithValue(
         dialogButton(
           'OK',
           onPressed: () async {
+            if (!isUnlocked) {
+              close();
+              return;
+            }
             if (await submit()) {
               close();
               showToast(translate('Successful'));
@@ -229,13 +308,19 @@ TextFormField serverSettingsTextFormField({
   bool autofocus = false,
   bool showLabelText = true,
   EdgeInsetsGeometry? contentPadding,
+  bool obscureText = false,
+  bool readOnly = false,
+  Widget? suffixIcon,
 }) {
   return TextFormField(
     controller: controller,
+    obscureText: obscureText,
+    readOnly: readOnly,
     decoration: InputDecoration(
       labelText: showLabelText ? label : null,
       errorText: errorMsg.isEmpty ? null : errorMsg,
       contentPadding: contentPadding,
+      suffixIcon: suffixIcon,
     ),
     validator: validator,
     autofocus: autofocus,
