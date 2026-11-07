@@ -236,8 +236,8 @@ class AbModel {
       _setEmptyBody(headers);
       final resp = await http.post(Uri.parse(api), headers: headers);
       statusCode = resp.statusCode;
-      if (statusCode == 404) {
-        debugPrint("HTTP 404, api server doesn't support shared address book");
+      if (statusCode == 404 || statusCode == 500) {
+        debugPrint("HTTP $statusCode, api server doesn't support shared address book");
         return false;
       }
       Map<String, dynamic> json =
@@ -268,8 +268,9 @@ class AbModel {
       _setEmptyBody(headers);
       final resp = await http.post(Uri.parse(api), headers: headers);
       statusCode = resp.statusCode;
-      if (statusCode == 404) {
-        debugPrint("HTTP 404, current api server is legacy mode");
+      if (statusCode == 404 || statusCode == 500) {
+        debugPrint("HTTP $statusCode, fallback to legacy personal address book mode");
+        _personalAbGuid = null;
         // Old server: keep `_personalAbGuid` null and continue in legacy mode.
         return true;
       }
@@ -317,9 +318,9 @@ class AbModel {
         _setEmptyBody(headers);
         final resp = await http.post(uri, headers: headers);
         statusCode = resp.statusCode;
-        if (statusCode == 404) {
+        if (statusCode == 404 || statusCode == 500) {
           debugPrint(
-              "HTTP 404, api server doesn't support shared address book");
+              "HTTP $statusCode, api server doesn't support shared address book");
           return false;
         }
         Map<String, dynamic> json =
@@ -1973,16 +1974,34 @@ class DummyAb extends BaseAb {
   Future<void> syncFromRecent(List<Peer> recents) async {}
 }
 
+String _sanitizeHttpError(String body, int statusCode, Object error) {
+  final lower = body.toLowerCase();
+  if (lower.contains('<!doctype') || lower.contains('<html') || lower.contains('<body')) {
+    if (statusCode == 500) {
+      return 'HTTP 500: Erro interno no servidor da API';
+    } else if (statusCode == 502) {
+      return 'HTTP 502: Bad Gateway';
+    } else if (statusCode == 503) {
+      return 'HTTP 503: Servico temporariamente indisponivel';
+    } else if (statusCode == 504) {
+      return 'HTTP 504: Gateway Timeout';
+    } else {
+      return 'HTTP $statusCode: Erro de resposta do servidor';
+    }
+  }
+  final err = body.isNotEmpty && body.length < 128 ? body : error.toString();
+  if (statusCode != 200) {
+    return 'HTTP $statusCode, $err';
+  }
+  return err;
+}
+
 Map<String, dynamic> _jsonDecodeRespMap(String body, int statusCode) {
   try {
     Map<String, dynamic> json = jsonDecode(body);
     return json;
   } catch (e) {
-    final err = body.isNotEmpty && body.length < 128 ? body : e.toString();
-    if (statusCode != 200) {
-      throw 'HTTP $statusCode, $err';
-    }
-    throw err;
+    throw _sanitizeHttpError(body, statusCode, e);
   }
 }
 
@@ -1991,11 +2010,7 @@ List<dynamic> _jsonDecodeRespList(String body, int statusCode) {
     List<dynamic> json = jsonDecode(body);
     return json;
   } catch (e) {
-    final err = body.isNotEmpty && body.length < 128 ? body : e.toString();
-    if (statusCode != 200) {
-      throw 'HTTP $statusCode, $err';
-    }
-    throw err;
+    throw _sanitizeHttpError(body, statusCode, e);
   }
 }
 
@@ -2012,10 +2027,17 @@ String _jsonDecodeActionResp(http.Response resp) {
         errMsg = 'HTTP ${resp.statusCode}';
       }
       if (resp.body.isNotEmpty) {
-        if (errMsg.isNotEmpty) {
-          errMsg += ', ';
+        final lower = resp.body.toLowerCase();
+        if (lower.contains('<!doctype') || lower.contains('<html') || lower.contains('<body')) {
+          if (errMsg.isEmpty) {
+            errMsg = 'HTTP ${resp.statusCode}: Erro interno no servidor da API';
+          }
+        } else {
+          if (errMsg.isNotEmpty) {
+            errMsg += ', ';
+          }
+          errMsg += resp.body;
         }
-        errMsg += resp.body;
       }
       if (errMsg.isEmpty) {
         errMsg = "unknown error";
