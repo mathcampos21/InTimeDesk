@@ -956,7 +956,11 @@ impl Client {
             id: peer.to_owned(),
             token: token.to_owned(),
             nat_type: nat_type.into(),
-            licence_key: key.to_owned(),
+            licence_key: if key.is_empty() || key == config::RS_PUB_KEY || key == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
+                crate::common::INTIMEDESK_RS_PUB_KEY.to_owned()
+            } else {
+                key.to_owned()
+            },
             conn_type: conn_type.into(),
             version: crate::VERSION.to_owned(),
             udp_port: udp_nat_port as _,
@@ -1658,7 +1662,7 @@ impl Client {
         key: &str,
         conn: &mut Stream,
     ) -> ResultType<Option<Vec<u8>>> {
-        let rs_pk = get_rs_pk(if key.is_empty() || key == config::RS_PUB_KEY {
+        let rs_pk = get_rs_pk(if key.is_empty() || key == config::RS_PUB_KEY || key == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
             crate::common::INTIMEDESK_RS_PUB_KEY
         } else {
             key
@@ -1871,7 +1875,11 @@ impl Client {
         .with_context(|| "Failed to connect to relay server")?;
         let mut msg_out = RendezvousMessage::new();
         msg_out.set_request_relay(RequestRelay {
-            licence_key: key.to_owned(),
+            licence_key: if key.is_empty() || key == config::RS_PUB_KEY || key == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
+                crate::common::INTIMEDESK_RS_PUB_KEY.to_owned()
+            } else {
+                key.to_owned()
+            },
             id: peer.to_owned(),
             uuid,
             conn_type: conn_type.into(),

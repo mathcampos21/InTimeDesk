@@ -2974,7 +2974,7 @@ class ServerConfig {
 
   static String normalizeBase64Key(String? rawKey, {String fallback = ""}) {
     var k = (rawKey ?? fallback).trim();
-    if (k.isEmpty && fallback.isNotEmpty) {
+    if ((k.isEmpty || k == "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=") && fallback.isNotEmpty) {
       k = fallback.trim();
     }
     while (k.isNotEmpty && k.length % 4 != 0) {
@@ -3030,7 +3030,7 @@ class ServerConfig {
     relayServer = options['relay-server'] ?? "";
     apiServer = options['api-server'] ?? "https://itdesksuport.intimelab.com.br";
     key = normalizeBase64Key(options['key']?.toString(),
-        fallback: "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=");
+        fallback: "H7yahdVGRMtM0oHsfXf+v7lIYRtjJlGcGZPAwI66+88=");
   }
 }
 

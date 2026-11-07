@@ -171,10 +171,12 @@ pub fn refresh_options() {
 
 #[inline]
 pub fn get_option<T: AsRef<str>>(key: T) -> String {
+    let key_ref = key.as_ref();
+    let v = {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         let map = OPTIONS.lock().unwrap();
-        if let Some(v) = map.get(key.as_ref()) {
+        if let Some(v) = map.get(key_ref) {
             v.to_owned()
         } else {
             "".to_owned()
@@ -182,7 +184,21 @@ pub fn get_option<T: AsRef<str>>(key: T) -> String {
     }
     #[cfg(any(target_os = "android", target_os = "ios"))]
     {
-        Config::get_option(key.as_ref())
+        Config::get_option(key_ref)
+    }
+    };
+    if key_ref == "key" && (v.is_empty() || v == config::RS_PUB_KEY || v == crate::common::OLD_INTIMEDESK_RS_PUB_KEY) {
+        return crate::common::INTIMEDESK_RS_PUB_KEY.to_string();
+    }
+    if key_ref == "custom-rendezvous-server" && v.is_empty() {
+        return crate::common::INTIMEDESK_RENDEZVOUS_SERVER.to_string();
+    }
+    if key_ref == "api-server" && v.is_empty() {
+        return "https://itdesksuport.intimelab.com.br".to_string();
+    }
+    return v;
+    #[allow(unreachable_code)]
+    {
     }
 }
 
@@ -358,6 +374,18 @@ pub fn get_options() -> String {
     let mut m = serde_json::Map::new();
     for (k, v) in options.iter() {
         m.insert(k.into(), v.to_owned().into());
+    }
+    let key_val = m.get("key").and_then(|v| v.as_str()).unwrap_or_default();
+    if key_val.is_empty() || key_val == config::RS_PUB_KEY || key_val == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
+        m.insert("key".to_string(), crate::common::INTIMEDESK_RS_PUB_KEY.into());
+    }
+    let server_val = m.get("custom-rendezvous-server").and_then(|v| v.as_str()).unwrap_or_default();
+    if server_val.is_empty() {
+        m.insert("custom-rendezvous-server".to_string(), crate::common::INTIMEDESK_RENDEZVOUS_SERVER.into());
+    }
+    let api_val = m.get("api-server").and_then(|v| v.as_str()).unwrap_or_default();
+    if api_val.is_empty() {
+        m.insert("api-server".to_string(), "https://itdesksuport.intimelab.com.br".into());
     }
     serde_json::to_string(&m).unwrap_or_default()
 }

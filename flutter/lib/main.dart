@@ -124,6 +124,18 @@ Future<void> initEnv(String appType) async {
   // for convenience, use global FFI on mobile platform
   // focus on multi-ffi on desktop first
   await initGlobalFFI();
+  final currentKey = bind.mainGetOption(key: 'key');
+  if (currentKey.isEmpty || currentKey == "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=") {
+    await bind.mainSetOption(key: 'key', value: 'H7yahdVGRMtM0oHsfXf+v7lIYRtjJlGcGZPAwI66+88=');
+  }
+  final currentServer = bind.mainGetOption(key: 'custom-rendezvous-server');
+  if (currentServer.isEmpty) {
+    await bind.mainSetOption(key: 'custom-rendezvous-server', value: 'itdesk.intimelab.com.br');
+  }
+  final currentApi = bind.mainGetOption(key: 'api-server');
+  if (currentApi.isEmpty) {
+    await bind.mainSetOption(key: 'api-server', value: 'https://itdesksuport.intimelab.com.br');
+  }
   // await Firebase.initializeApp();
   _registerEventHandler();
   // Update the system theme.
