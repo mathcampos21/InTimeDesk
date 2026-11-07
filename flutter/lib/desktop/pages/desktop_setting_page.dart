@@ -3065,7 +3065,16 @@ Widget _lock(
                           ]).marginSymmetric(vertical: 2)),
                   onPressed: () async {
                     final unlockPin = bind.mainGetUnlockPin();
-                    checkUnlockPinDialog(unlockPin, onUnlock);
+                    if (unlockPin.isNotEmpty) {
+                      checkUnlockPinDialog(unlockPin, onUnlock);
+                    } else {
+                      bool checked = await callMainCheckSuperUserPermission();
+                      if (checked) {
+                        onUnlock();
+                      } else {
+                        checkUnlockPinDialog("", onUnlock);
+                      }
+                    }
                   },
                 ).marginSymmetric(horizontal: 2, vertical: 4),
               ).marginOnly(left: _kCardLeftMargin),

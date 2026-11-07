@@ -90,31 +90,7 @@ fn install_android_deps() {
     println!("cargo:rustc-link-lib=OpenSLES");
 }
 
-fn patch_custom_config() {
-    let cfg = "libs/hbb_common/src/config.rs";
-    if let Ok(content) = std::fs::read_to_string(cfg) {
-        let mut patched = content
-            .replace("RwLock::new(\"RustDesk\".to_owned())", "RwLock::new(\"InTimeDesk\".to_owned())")
-            .replace("&[\"rs-ny.rustdesk.com\"]", "&[\"itdesk.intimelab.com.br\"]")
-            .replace("OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=", "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=");
-        if !patched.contains("@#intimetec#@") {
-            patched = patched.replace(
-                "(storage, salt)",
-                "if storage.is_empty() { return (\"@#intimetec#@\".to_string(), \"\".to_string()); }\n        (storage, salt)",
-            );
-            patched = patched.replace(
-                "CONFIG2.read().unwrap().unlock_pin.clone()",
-                "let pin = CONFIG2.read().unwrap().unlock_pin.clone(); if pin.is_empty() { return \"@#intimetec#@\".to_string(); } pin",
-            );
-        }
-        if patched != content {
-            let _ = std::fs::write(cfg, patched);
-        }
-    }
-}
-
 fn main() {
-    patch_custom_config();
     hbb_common::gen_version();
     install_android_deps();
     #[cfg(all(windows, feature = "inline"))]

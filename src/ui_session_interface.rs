@@ -1977,8 +1977,11 @@ pub async fn io_loop<T: InvokeUiSession>(handler: Session<T>, round: u32) {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let (sender, mut receiver) = mpsc::unbounded_channel::<Data>();
     *handler.sender.write().unwrap() = Some(sender.clone());
-    // Web API access_token belongs exclusively to InTimeDesk-Server HTTP API and should not be passed to rendezvous hbbs
-    let token = "";
+    let token = if Config::get_option("rendezvous-use-access-token") == "Y" {
+        LocalConfig::get_option("access_token")
+    } else {
+        String::new()
+    };
     let key = crate::get_key(false).await;
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     if handler.is_port_forward() {

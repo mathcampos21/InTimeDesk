@@ -825,5 +825,10 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Renew trust", "Renovar confiança"),
         ("install-directory-not-empty-tip", "A pasta selecionada não está vazia. A instalação pode excluir dados existentes. Considere escolher outra pasta."),
         ("Request approval", "Solicitar aprovação"),
+        ("Unlock with Master Password", "Desbloquear com Senha Mestre"),
+        ("Unlock with master password to modify", "Desbloqueie com a senha mestre para alterar"),
+        ("Settings unlocked", "Configurações desbloqueadas"),
+        ("Master Password", "Senha Mestre"),
+        ("Enter master password to unlock", "Digite a senha mestre para desbloquear"),
     ].iter().cloned().collect();
 }

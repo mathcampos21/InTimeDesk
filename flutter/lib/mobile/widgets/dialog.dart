@@ -94,16 +94,13 @@ void showServerSettingsWithValue(
   dialogManager.show((setState, close, context) {
     Future<bool> submit() async {
       if (!isUnlocked) {
-        showToast('Desbloqueie com a senha mestre para alterar');
+        showToast(translate('Unlock with master password to modify'));
         return false;
       }
       setState(() {
         isInProgress = true;
       });
-      var k = keyCtrl.text.trim();
-      while (k.isNotEmpty && k.length % 4 != 0) {
-        k += '=';
-      }
+      final k = ServerConfig.normalizeBase64Key(keyCtrl.text);
       keyCtrl.text = k;
       bool ret = await setServerConfig(
           null,
@@ -225,7 +222,7 @@ void showServerSettingsWithValue(
                       padding: const EdgeInsets.only(top: 10),
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.lock, size: 16),
-                        label: const Text('Desbloquear com Senha Mestre'),
+                        label: Text(translate('Unlock with Master Password')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF0B57D0),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -234,13 +231,17 @@ void showServerSettingsWithValue(
                           final pinCtrl = TextEditingController();
                           gFFI.dialogManager.show((pinSetState, pinClose, pinContext) {
                             String? pinError;
+                            void closeMasterPinDialog() {
+                              pinCtrl.dispose();
+                              pinClose();
+                            }
                             void tryUnlock() {
-                              if (pinCtrl.text.trim() == '@#intimetec#@') {
+                              if (isMasterPassword(pinCtrl.text.trim())) {
                                 setState(() {
                                   isUnlocked = true;
                                 });
-                                pinClose();
-                                showToast('Configurações desbloqueadas');
+                                closeMasterPinDialog();
+                                showToast(translate('Settings unlocked'));
                               } else {
                                 pinSetState(() {
                                   pinError = translate('Wrong PIN');
@@ -248,19 +249,19 @@ void showServerSettingsWithValue(
                               }
                             }
                             return CustomAlertDialog(
-                              title: const Text('Senha Mestre'),
+                              title: Text(translate('Master Password')),
                               content: PasswordWidget(
-                                title: 'Senha Mestre',
+                                title: translate('Master Password'),
                                 controller: pinCtrl,
                                 errorText: pinError,
-                                hintText: 'Digite a senha mestre para desbloquear',
+                                hintText: translate('Enter master password to unlock'),
                               ),
                               actions: [
-                                dialogButton(translate('Cancel'), onPressed: pinClose, isOutline: true),
+                                dialogButton(translate('Cancel'), onPressed: closeMasterPinDialog, isOutline: true),
                                 dialogButton(translate('OK'), onPressed: tryUnlock),
                               ],
                               onSubmit: tryUnlock,
-                              onCancel: pinClose,
+                              onCancel: closeMasterPinDialog,
                             );
                           });
                         },
@@ -276,11 +277,11 @@ void showServerSettingsWithValue(
         ),
       ),
       actions: [
-        dialogButton('Cancel', onPressed: () {
+        dialogButton(translate('Cancel'), onPressed: () {
           close();
         }, isOutline: true),
         dialogButton(
-          'OK',
+          translate('OK'),
           onPressed: () async {
             if (!isUnlocked) {
               close();
