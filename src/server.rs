@@ -15,7 +15,7 @@ use hbb_common::{
     allow_err,
     anyhow::Context,
     bail,
-    config::{Config, CONNECT_TIMEOUT, RELAY_PORT},
+    config::{self, Config, CONNECT_TIMEOUT, RELAY_PORT, RS_PUB_KEY},
     log,
     protobuf::{Enum, Message as _},
     rendezvous_proto::*,
@@ -415,7 +415,7 @@ async fn create_relay_connection_(
     let mut msg_out = RendezvousMessage::new();
     let licence_key = crate::get_key(true).await;
     msg_out.set_request_relay(RequestRelay {
-        licence_key: if licence_key.is_empty() || licence_key == config::RS_PUB_KEY || licence_key == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
+        licence_key: if licence_key.is_empty() || licence_key == hbb_common::config::RS_PUB_KEY || licence_key == crate::common::OLD_INTIMEDESK_RS_PUB_KEY {
             crate::common::INTIMEDESK_RS_PUB_KEY.to_owned()
         } else {
             licence_key
