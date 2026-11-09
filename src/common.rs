@@ -2489,27 +2489,17 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 pub fn load_custom_client() {
     *config::APP_NAME.write().unwrap() = "InTimeDesk".to_owned();
     *config::PROD_RENDEZVOUS_SERVER.write().unwrap() = "itdesk.intimelab.com.br".to_owned();
-    {
-        let mut need_save = false;
-        let mut cfg = config::CONFIG2.write().unwrap();
-        let key_opt = cfg.options.get("key").cloned().unwrap_or_default();
-        if key_opt.is_empty() || key_opt == config::RS_PUB_KEY || key_opt == OLD_INTIMEDESK_RS_PUB_KEY {
-            cfg.options.insert("key".to_string(), INTIMEDESK_RS_PUB_KEY.to_string());
-            need_save = true;
-        }
-        let server_opt = cfg.options.get("custom-rendezvous-server").cloned().unwrap_or_default();
-        if server_opt.is_empty() {
-            cfg.options.insert("custom-rendezvous-server".to_string(), INTIMEDESK_RENDEZVOUS_SERVER.to_string());
-            need_save = true;
-        }
-        let api_opt = cfg.options.get("api-server").cloned().unwrap_or_default();
-        if api_opt.is_empty() {
-            cfg.options.insert("api-server".to_string(), "https://itdesksuport.intimelab.com.br".to_string());
-            need_save = true;
-        }
-        if need_save {
-            cfg.store();
-        }
+    let key_opt = Config::get_option("key");
+    if key_opt.is_empty() || key_opt == config::RS_PUB_KEY || key_opt == OLD_INTIMEDESK_RS_PUB_KEY {
+        Config::set_option("key".to_string(), INTIMEDESK_RS_PUB_KEY.to_string());
+    }
+    let server_opt = Config::get_option("custom-rendezvous-server");
+    if server_opt.is_empty() {
+        Config::set_option("custom-rendezvous-server".to_string(), INTIMEDESK_RENDEZVOUS_SERVER.to_string());
+    }
+    let api_opt = Config::get_option("api-server");
+    if api_opt.is_empty() {
+        Config::set_option("api-server".to_string(), "https://itdesksuport.intimelab.com.br".to_string());
     }
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {

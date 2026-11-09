@@ -173,19 +173,19 @@ pub fn refresh_options() {
 pub fn get_option<T: AsRef<str>>(key: T) -> String {
     let key_ref = key.as_ref();
     let v = {
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    {
-        let map = OPTIONS.lock().unwrap();
-        if let Some(v) = map.get(key_ref) {
-            v.to_owned()
-        } else {
-            "".to_owned()
+        #[cfg(not(any(target_os = "android", target_os = "ios")))]
+        {
+            let map = OPTIONS.lock().unwrap();
+            if let Some(v) = map.get(key_ref) {
+                v.to_owned()
+            } else {
+                "".to_owned()
+            }
         }
-    }
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    {
-        Config::get_option(key_ref)
-    }
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        {
+            Config::get_option(key_ref)
+        }
     };
     if key_ref == "key" && (v.is_empty() || v == config::RS_PUB_KEY || v == crate::common::OLD_INTIMEDESK_RS_PUB_KEY) {
         return crate::common::INTIMEDESK_RS_PUB_KEY.to_string();
@@ -196,10 +196,7 @@ pub fn get_option<T: AsRef<str>>(key: T) -> String {
     if key_ref == "api-server" && v.is_empty() {
         return "https://itdesksuport.intimelab.com.br".to_string();
     }
-    return v;
-    #[allow(unreachable_code)]
-    {
-    }
+    v
 }
 
 #[inline]
