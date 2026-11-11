@@ -41,9 +41,11 @@ jobs:
 
       - name: Install prerequisites
         run: |
-          sudo apt-get install ca-certificates -y
-          sudo apt-get update -y
-          sudo apt-get install -y \
+          sudo sed -i '1s/^/nameserver 8.8.8.8\nnameserver 1.1.1.1\n/' /etc/resolv.conf || true
+          sudo sed -i 's|http://azure.archive.ubuntu.com/|http://archive.ubuntu.com/|g' /etc/apt/sources.list || true
+          for i in 1 2 3 4 5; do sudo apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
+          sudo apt-get install --fix-missing -y -o Acquire::Retries=5 ca-certificates
+          sudo apt-get install --fix-missing -y -o Acquire::Retries=5 \
             clang \
             cmake \
             curl \

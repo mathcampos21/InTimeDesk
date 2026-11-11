@@ -1489,8 +1489,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo sed -i '1s/^/nameserver 8.8.8.8\nnameserver 1.1.1.1\n/' /etc/resolv.conf || true
+          sudo sed -i 's|http://azure.archive.ubuntu.com/|http://archive.ubuntu.com/|g' /etc/apt/sources.list || true
+          for i in 1 2 3 4 5; do sudo apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
+          sudo apt-get install --fix-missing -y -o Acquire::Retries=5 \
                clang \
                cmake \
                curl \
@@ -1762,8 +1764,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo sed -i '1s/^/nameserver 8.8.8.8\nnameserver 1.1.1.1\n/' /etc/resolv.conf || true
+          sudo sed -i 's|http://azure.archive.ubuntu.com/|http://archive.ubuntu.com/|g' /etc/apt/sources.list || true
+          for i in 1 2 3 4 5; do sudo apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
+          sudo apt-get install --fix-missing -y -o Acquire::Retries=5 \
                clang \
                cmake \
                curl \
