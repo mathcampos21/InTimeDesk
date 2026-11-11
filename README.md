@@ -1,7 +1,7 @@
 # InTimeDesk & InTimeDesk SOS
 
 <p align="center">
-  <img src="res/logo-header.svg" alt="InTimeDesk - In Time Technology" width="400"><br>
+  <img src="res/logo_header.png" alt="InTimeDesk - In Time Technology" width="400"><br>
   <b>Solução Corporativa de Suporte e Acesso Remoto Seguro</b><br>
   <i>Desenvolvido por In Time Technology</i>
 </p>

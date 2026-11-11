@@ -15,8 +15,11 @@ src/version.rs
 cert.pfx
 *.bak
 *png
+!res/*.png
 *svg
+!res/*.svg
 *jpg
+!res/*.jpg
 sciter.dll
 **pdb
 src/bridge_generated.rs
