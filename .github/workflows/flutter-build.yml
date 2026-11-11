@@ -2049,11 +2049,14 @@ jobs:
             ls -l "${PWD}"
             ls -l /opt/artifacts/vcpkg/installed
           dockerRunArgs: |
+            --dns 8.8.8.8
+            --dns 1.1.1.1
             --volume "${PWD}:/workspace"
             --volume "/opt/artifacts:/opt/artifacts"
           shell: /bin/bash
           install: |
-            apt-get update -y
+            sed -i -e 's|http://archive.ubuntu.com/|http://old-releases.ubuntu.com/|g' -e 's|http://security.ubuntu.com/|http://old-releases.ubuntu.com/|g' /etc/apt/sources.list 2>/dev/null || true
+            for i in 1 2 3 4 5; do apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
             echo -e "installing deps"
             apt-get install -y \
                build-essential \
@@ -2371,11 +2374,14 @@ jobs:
             ls -l "${PWD}"
             ls -l /opt/artifacts/vcpkg/installed
           dockerRunArgs: |
+            --dns 8.8.8.8
+            --dns 1.1.1.1
             --volume "${PWD}:/workspace"
             --volume "/opt/artifacts:/opt/artifacts"
           shell: /bin/bash
           install: |
-            apt-get update -y
+            sed -i -e 's|http://archive.ubuntu.com/|http://old-releases.ubuntu.com/|g' -e 's|http://security.ubuntu.com/|http://old-releases.ubuntu.com/|g' /etc/apt/sources.list 2>/dev/null || true
+            for i in 1 2 3 4 5; do apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
             echo -e "installing deps"
             apt-get install -y \
                build-essential \
@@ -2662,10 +2668,13 @@ jobs:
           setup: |
             ls -l "${PWD}"
           dockerRunArgs: |
+            --dns 8.8.8.8
+            --dns 1.1.1.1
             --volume "${PWD}:/workspace"
           shell: /bin/bash
           install: |
-            apt-get update
+            sed -i -e 's|http://archive.ubuntu.com/|http://old-releases.ubuntu.com/|g' -e 's|http://security.ubuntu.com/|http://old-releases.ubuntu.com/|g' /etc/apt/sources.list 2>/dev/null || true
+            for i in 1 2 3 4 5; do apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
             apt-get install -y \
                build-essential \
                clang \
@@ -2933,10 +2942,13 @@ jobs:
           setup: |
             ls -l "${PWD}"
           dockerRunArgs: |
+            --dns 8.8.8.8
+            --dns 1.1.1.1
             --volume "${PWD}:/workspace"
           shell: /bin/bash
           install: |
-            apt-get update -y
+            sed -i -e 's|http://archive.ubuntu.com/|http://old-releases.ubuntu.com/|g' -e 's|http://security.ubuntu.com/|http://old-releases.ubuntu.com/|g' /etc/apt/sources.list 2>/dev/null || true
+            for i in 1 2 3 4 5; do apt-get update -y -o Acquire::Retries=5 && break || sleep 5; done
             apt-get install -y git flatpak flatpak-builder
           run: |
             # disable git safe.directory

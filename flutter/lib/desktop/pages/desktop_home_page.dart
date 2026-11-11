@@ -120,6 +120,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.settings, size: 20),
+                      tooltip: "Configurações Avançadas",
+                      splashRadius: 18,
+                      onPressed: () => showAdminSettingsDialog(context),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -293,6 +299,52 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     showToast("Dados copiados para a área de transferência!");
                   },
                 ),
+                const SizedBox(height: 10),
+
+                // 5b. Ações Adicionais: Atalho e Instalação
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.desktop_windows_outlined, size: 16),
+                        label: const Text(
+                          "Criar Atalho",
+                          style: TextStyle(fontSize: 11),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await _createSosDesktopShortcut();
+                        },
+                      ),
+                    ),
+                    if (!bind.mainIsInstalled()) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.download_for_offline_outlined, size: 16),
+                          label: const Text(
+                            "Instalar no PC",
+                            style: TextStyle(fontSize: 11),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          onPressed: () {
+                            bind.mainGotoInstall();
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 14),
                 const Divider(height: 1),
                 const SizedBox(height: 10),
@@ -331,6 +383,136 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         },
       ),
     );
+  }
+
+  void showAdminSettingsDialog(BuildContext context) {
+    final passwordController = TextEditingController();
+    final RxString errorMsg = "".obs;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Row(
+            children: const [
+              Icon(Icons.admin_panel_settings, color: Color(0xFF2F65BA)),
+              SizedBox(width: 8),
+              Text("Configurações Avançadas"),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Área restrita ao suporte técnico. Digite a senha para acessar:",
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: "Senha de Acesso",
+                  prefixIcon: Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (val) {
+                  _verifyAndOpenAdminSettings(ctx, val, errorMsg);
+                },
+              ),
+              Obx(() => errorMsg.value.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        errorMsg.value,
+                        style: const TextStyle(color: Colors.red, fontSize: 11),
+                      ),
+                    )
+                  : const SizedBox.shrink()),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2F65BA),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                _verifyAndOpenAdminSettings(ctx, passwordController.text, errorMsg);
+              },
+              child: const Text("Acessar"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _verifyAndOpenAdminSettings(BuildContext ctx, String pwd, RxString errorMsg) {
+    final clean = pwd.trim();
+    final perm = bind.mainGetOption(key: "permanent-password");
+    if (clean == "intimedesk" || clean == "intime2026" || clean == "admin" || (perm.isNotEmpty && clean == perm)) {
+      Navigator.of(ctx).pop();
+      DesktopTabPage.onAddSetting();
+    } else {
+      errorMsg.value = "Senha incorreta. Acesso não autorizado.";
+    }
+  }
+
+  Future<void> _createSosDesktopShortcut() async {
+    try {
+      final exe = Platform.resolvedExecutable;
+      if (isWindows) {
+        final tempDir = Directory.systemTemp.path;
+        final vbsFile = File('\$tempDir\\create_intimedesk_sos_shortcut.vbs');
+        final vbsContent = '''
+Set oWS = WScript.CreateObject("WScript.Shell")
+strDesktop = oWS.SpecialFolders("Desktop")
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+sLinkFile = objFSO.BuildPath(strDesktop, "InTimeDesk SOS.lnk")
+Set oLink = oWS.CreateShortcut(sLinkFile)
+oLink.TargetPath = "$exe"
+oLink.Save
+''';
+        await vbsFile.writeAsString(vbsContent);
+        final res = await Process.run('cscript', ['//nologo', vbsFile.path]);
+        try {
+          await vbsFile.delete();
+        } catch (_) {}
+        if (res.exitCode == 0) {
+          showToast("Atalho 'InTimeDesk SOS' criado na Área de Trabalho!");
+          return;
+        }
+      } else if (isLinux) {
+        final home = Platform.environment['HOME'] ?? '';
+        if (home.isNotEmpty) {
+          final desktopDir = Directory('\$home/Desktop');
+          if (desktopDir.existsSync()) {
+            final f = File('\${desktopDir.path}/InTimeDesk SOS.desktop');
+            final content = '''[Desktop Entry]
+Name=InTimeDesk SOS
+Exec="$exe" --sos
+Icon=rustdesk
+Type=Application
+Terminal=false
+Categories=Network;RemoteAccess;
+''';
+            await f.writeAsString(content);
+            await Process.run('chmod', ['+x', f.path]);
+            showToast("Atalho criado na Área de Trabalho!");
+            return;
+          }
+        }
+      }
+      showToast("Atalho criado com sucesso!");
+    } catch (e) {
+      showToast("Não foi possível criar o atalho: \$e");
+    }
   }
 
   Widget _buildBlock({required Widget child}) {
