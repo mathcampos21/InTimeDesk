@@ -468,6 +468,7 @@ jobs:
           popd
           mkdir -p ./SignOutput
           cp ./target/release/rustdesk-portable-packer.exe ./SignOutput/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          cp ./target/release/rustdesk-portable-packer.exe ./SignOutput/InTimeDesk-SOS-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
       - name: Add MSBuild to PATH
@@ -548,6 +549,13 @@ jobs:
         run: |
           BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
 
+      - name: Upload InTimeDesk SOS Windows EXE
+        if: env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: InTimeDesk-SOS-Windows-${{ matrix.job.arch }}
+          path: ./SignOutput/InTimeDesk-SOS-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          if-no-files-found: warn
       - name: Upload InTimeDesk Windows EXE
         if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

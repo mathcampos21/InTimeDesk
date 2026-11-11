@@ -84,7 +84,7 @@ pub fn core_main() -> Option<CoreMainAction> {
                 _is_elevate = true;
             } else if arg == "--run-as-system" {
                 _is_run_as_system = true;
-            } else if arg == "--quick_support" {
+            } else if arg == "--quick_support" || arg == "--quick-support" || arg == "--sos" {
                 _is_quick_support = true;
             } else if arg == "--no-server" {
                 no_server = true;
@@ -910,5 +910,11 @@ fn parse_silent_install_args(args: &[String]) -> (Option<bool>, bool) {
 #[inline]
 fn is_quick_support_exe(exe: &str) -> bool {
     let exe = exe.to_lowercase();
-    exe.contains("-qs-") || exe.contains("-qs.exe") || exe.contains("_qs.exe")
+    exe.contains("-qs-")
+        || exe.contains("-qs.exe")
+        || exe.contains("_qs.exe")
+        || exe.contains("sos")
+        || exe.contains("quicksupport")
+        || exe.contains("-qs")
+        || exe.contains("_qs")
 }

@@ -2486,8 +2486,27 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+pub fn is_sos_app() -> bool {
+    let is_by_exe = std::env::current_exe()
+        .map(|p| {
+            let s = p.to_string_lossy().to_lowercase();
+            s.contains("sos") || s.contains("-qs") || s.contains("_qs") || s.contains("quicksupport")
+        })
+        .unwrap_or(false);
+    let is_by_arg = std::env::args().any(|a| a == "--sos" || a == "--quick_support" || a == "--quick-support");
+    is_by_exe || is_by_arg
+}
+
 pub fn load_custom_client() {
-    *config::APP_NAME.write().unwrap() = "InTimeDesk".to_owned();
+    if is_sos_app() {
+        *config::APP_NAME.write().unwrap() = "InTimeDesk SOS".to_owned();
+        config::HARD_SETTINGS.write().unwrap().insert("conn-type".to_string(), "incoming".to_string());
+        config::HARD_SETTINGS.write().unwrap().insert("disable-settings".to_string(), "Y".to_string());
+        config::HARD_SETTINGS.write().unwrap().insert("disable-ab".to_string(), "Y".to_string());
+        config::HARD_SETTINGS.write().unwrap().insert("disable-account".to_string(), "Y".to_string());
+    } else {
+        *config::APP_NAME.write().unwrap() = "InTimeDesk".to_owned();
+    }
     *config::PROD_RENDEZVOUS_SERVER.write().unwrap() = "itdesk.intimelab.com.br".to_owned();
     let key_opt = Config::get_option("key");
     if key_opt.is_empty() || key_opt == config::RS_PUB_KEY || key_opt == OLD_INTIMEDESK_RS_PUB_KEY {
