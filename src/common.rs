@@ -2493,12 +2493,21 @@ pub fn is_sos_app() -> bool {
             s.contains("sos") || s.contains("-qs") || s.contains("_qs") || s.contains("quicksupport")
         })
         .unwrap_or(false);
+    let is_by_env = std::env::var("RUSTDESK_APPNAME")
+        .map(|s| {
+            let s = s.to_lowercase();
+            s.contains("sos") || s.contains("-qs") || s.contains("_qs") || s.contains("quicksupport")
+        })
+        .unwrap_or(false);
     let is_by_arg = std::env::args().any(|a| a == "--sos" || a == "--quick_support" || a == "--quick-support");
-    is_by_exe || is_by_arg
+    is_by_exe || is_by_env || is_by_arg
 }
 
 pub fn load_custom_client() {
     if is_sos_app() {
+        if std::env::var("RUSTDESK_APPNAME").is_err() {
+            std::env::set_var("RUSTDESK_APPNAME", "InTimeDesk-SOS");
+        }
         *config::APP_NAME.write().unwrap() = "InTimeDesk SOS".to_owned();
         config::HARD_SETTINGS.write().unwrap().insert("conn-type".to_string(), "incoming".to_string());
         config::HARD_SETTINGS.write().unwrap().insert("disable-ab".to_string(), "Y".to_string());

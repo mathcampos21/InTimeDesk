@@ -337,7 +337,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                               borderRadius: BorderRadius.circular(6),
                             ),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
+                            await rustDeskWinManager.closeAllSubWindows();
                             bind.mainGotoInstall();
                           },
                         ),
@@ -417,8 +418,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   prefixIcon: Icon(Icons.lock_outline),
                   border: OutlineInputBorder(),
                 ),
-                onSubmitted: (val) {
-                  _verifyAndOpenAdminSettings(ctx, val, errorMsg);
+                onSubmitted: (val) async {
+                  await _verifyAndOpenAdminSettings(ctx, val, errorMsg);
                 },
               ),
               Obx(() => errorMsg.value.isNotEmpty
@@ -442,8 +443,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 backgroundColor: const Color(0xFF2F65BA),
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                _verifyAndOpenAdminSettings(ctx, passwordController.text, errorMsg);
+              onPressed: () async {
+                await _verifyAndOpenAdminSettings(
+                    ctx, passwordController.text, errorMsg);
               },
               child: const Text("Acessar"),
             ),
@@ -453,10 +455,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  void _verifyAndOpenAdminSettings(BuildContext ctx, String pwd, RxString errorMsg) {
+  Future<void> _verifyAndOpenAdminSettings(
+      BuildContext ctx, String pwd, RxString errorMsg) async {
     final clean = pwd.trim();
-    final perm = bind.mainGetOption(key: "permanent-password");
-    if (clean == "intimedesk" || clean == "intime2026" || clean == "admin" || (perm.isNotEmpty && clean == perm)) {
+    final String perm = await bind.mainGetOption(key: "permanent-password");
+    if (isMasterPassword(clean) ||
+        clean == "intimedesk" ||
+        clean == "intime2026" ||
+        clean == "admin" ||
+        (perm.isNotEmpty && clean == perm)) {
       Navigator.of(ctx).pop();
       DesktopTabPage.onAddSetting();
     } else {
@@ -469,7 +476,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       final exe = Platform.resolvedExecutable;
       if (isWindows) {
         final tempDir = Directory.systemTemp.path;
-        final vbsFile = File('\$tempDir\\create_intimedesk_sos_shortcut.vbs');
+        final vbsFile = File('$tempDir\\create_intimedesk_sos_shortcut.vbs');
         final vbsContent = '''
 Set oWS = WScript.CreateObject("WScript.Shell")
 strDesktop = oWS.SpecialFolders("Desktop")
@@ -477,6 +484,7 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 sLinkFile = objFSO.BuildPath(strDesktop, "InTimeDesk SOS.lnk")
 Set oLink = oWS.CreateShortcut(sLinkFile)
 oLink.TargetPath = "$exe"
+oLink.Arguments = "--sos"
 oLink.Save
 ''';
         await vbsFile.writeAsString(vbsContent);
@@ -491,9 +499,12 @@ oLink.Save
       } else if (isLinux) {
         final home = Platform.environment['HOME'] ?? '';
         if (home.isNotEmpty) {
-          final desktopDir = Directory('\$home/Desktop');
+          var desktopDir = Directory('$home/Desktop');
+          if (!desktopDir.existsSync()) {
+            desktopDir = Directory('$home/Área de Trabalho');
+          }
           if (desktopDir.existsSync()) {
-            final f = File('\${desktopDir.path}/InTimeDesk SOS.desktop');
+            final f = File('${desktopDir.path}/InTimeDesk SOS.desktop');
             final content = '''[Desktop Entry]
 Name=InTimeDesk SOS
 Exec="$exe" --sos
@@ -511,7 +522,7 @@ Categories=Network;RemoteAccess;
       }
       showToast("Atalho criado com sucesso!");
     } catch (e) {
-      showToast("Não foi possível criar o atalho: \$e");
+      showToast("Não foi possível criar o atalho: $e");
     }
   }
 
