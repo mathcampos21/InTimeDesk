@@ -2508,7 +2508,7 @@ pub fn load_custom_client() {
         if std::env::var("RUSTDESK_APPNAME").is_err() {
             std::env::set_var("RUSTDESK_APPNAME", "InTimeDesk-SOS");
         }
-        *config::APP_NAME.write().unwrap() = "InTimeDesk SOS".to_owned();
+        *config::APP_NAME.write().unwrap() = "InTimeDesk-SOS".to_owned();
         config::HARD_SETTINGS.write().unwrap().insert("conn-type".to_string(), "incoming".to_string());
         config::HARD_SETTINGS.write().unwrap().insert("disable-ab".to_string(), "Y".to_string());
         config::HARD_SETTINGS.write().unwrap().insert("disable-account".to_string(), "Y".to_string());
