@@ -493,7 +493,8 @@ jobs:
           msbuild msi.sln -p:Configuration=Release -p:Platform=$msiPlatform /p:TargetVersion=Windows10
           $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
           mv $msi.FullName ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
-          sha256sum ../../SignOutput/rustdesk-*.msi
+          cp ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi ../../SignOutput/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
+          sha256sum ../../SignOutput/rustdesk-*.msi ../../SignOutput/InTimeDesk-*.msi
 
       - name: Build pre-built MSI template
         # Two things this works around: preprocess.py rewrites res/msi in place, so the
@@ -563,6 +564,13 @@ jobs:
           name: InTimeDesk-Windows-${{ matrix.job.arch }}
           path: ./SignOutput/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
           if-no-files-found: warn
+      - name: Upload InTimeDesk Windows MSI
+        if: env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: InTimeDesk-Windows-MSI-${{ matrix.job.arch }}
+          path: ./SignOutput/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
+          if-no-files-found: warn
 
       - name: Upload signed Windows Flutter EXE
         if: env.UPLOAD_ARTIFACT == 'true' && env.PUBLISH_UPDATE_METADATA == 'true' && env.SIGN_BASE_URL != '-2'
@@ -588,6 +596,7 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             ./SignOutput/rustdesk-*.msi
+            ./SignOutput/InTimeDesk-*.msi
             ./SignOutput/rustdesk-*.exe
             ./SignOutput/InTimeDesk-*.exe
 
@@ -1709,6 +1718,19 @@ jobs:
           # env.ANDROID_SIGN_TOOL_VERSION is set by Step "Setup sign tool version variable"
           BUILD_TOOLS_VERSION: ${{ env.ANDROID_SIGN_TOOL_VERSION }}
 
+      - name: Prepare InTimeDesk Android APK
+        shell: bash
+        run: |
+          cp signed-apk/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk signed-apk/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+
+      - name: Upload InTimeDesk Android APK
+        if: env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
+          path: signed-apk/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+          if-no-files-found: warn
+
       - name: Upload Artifacts
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -1733,6 +1755,7 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             signed-apk/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
+            signed-apk/InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
 
   build-rustdesk-android-universal:
     needs: [build-rustdesk-android]
@@ -1896,6 +1919,19 @@ jobs:
           # env.ANDROID_SIGN_TOOL_VERSION is set by Step "Setup sign tool version variable"
           BUILD_TOOLS_VERSION: ${{ env.ANDROID_SIGN_TOOL_VERSION }}
 
+      - name: Prepare InTimeDesk Universal Android APK
+        shell: bash
+        run: |
+          cp signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk signed-apk/InTimeDesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
+
+      - name: Upload InTimeDesk Universal Android APK
+        if: env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: InTimeDesk-${{ env.VERSION }}-universal.apk
+          path: signed-apk/InTimeDesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
+          if-no-files-found: warn
+
       - name: Upload Artifacts
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -1920,6 +1956,7 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
+            signed-apk/InTimeDesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
 
   build-rustdesk-linux:
     needs: [generate-bridge]
@@ -2184,6 +2221,7 @@ jobs:
             python3 ./build.py --flutter --skip-cargo
             for name in rustdesk*??.deb; do
               mv "$name" "${name%%.deb}-${{ matrix.job.arch }}.deb"
+              cp "${name%%.deb}-${{ matrix.job.arch }}.deb" "$(echo "${name%%.deb}-${{ matrix.job.arch }}.deb" | sed 's/^rustdesk-/InTimeDesk-/')"
             done
 
             # rpm package
@@ -2198,6 +2236,7 @@ jobs:
             pushd ~/rpmbuild/RPMS/${{ matrix.job.arch }}
             for name in rustdesk*??.rpm; do
                 mv "$name" /workspace/"${name%%.rpm}.rpm"
+                cp /workspace/"${name%%.rpm}.rpm" /workspace/"$(echo "${name%%.rpm}.rpm" | sed 's/^rustdesk-/InTimeDesk-/')"
             done
 
             # rpm suse package
@@ -2212,6 +2251,7 @@ jobs:
             pushd ~/rpmbuild/RPMS/${{ matrix.job.arch }}
             for name in rustdesk*??.rpm; do
                 mv "$name" /workspace/"${name%%.rpm}-suse.rpm"
+                cp /workspace/"${name%%.rpm}-suse.rpm" /workspace/"$(echo "${name%%.rpm}-suse.rpm" | sed 's/^rustdesk-/InTimeDesk-/')"
             done
 
       - name: Publish debian/rpm package
@@ -2222,7 +2262,9 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             rustdesk-*.deb
+            InTimeDesk-*.deb
             rustdesk-*.rpm
+            InTimeDesk-*.rpm
 
       - name: Upload deb
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -2230,6 +2272,13 @@ jobs:
         with:
           name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.deb
           path: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.deb
+      - name: Upload InTimeDesk deb
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: env.UPLOAD_ARTIFACT == 'true'
+        with:
+          name: InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.deb
+          path: InTimeDesk-${{ env.VERSION }}-${{ matrix.job.arch }}.deb
+          if-no-files-found: warn
 
       # only x86_64 for arch since we can not find newest arm64 docker image to build
       # old arch image does not make sense for arch since it is "arch" which always update to date

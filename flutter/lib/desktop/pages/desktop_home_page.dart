@@ -891,7 +891,7 @@ Categories=Network;RemoteAccess;
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
       GestureTapCallback onPressed = () async {
-        final Uri url = Uri.parse('https://rustdesk.com/download');
+        final Uri url = Uri.parse('https://itdesksuport.intimelab.com.br/download');
         await launchUrl(url);
       };
       if (isToUpdate) {
