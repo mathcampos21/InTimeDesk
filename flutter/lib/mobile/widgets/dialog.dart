@@ -232,7 +232,6 @@ void showServerSettingsWithValue(
                           gFFI.dialogManager.show((pinSetState, pinClose, pinContext) {
                             String? pinError;
                             void closeMasterPinDialog() {
-                              pinCtrl.dispose();
                               pinClose();
                             }
                             void tryUnlock() {
@@ -263,7 +262,7 @@ void showServerSettingsWithValue(
                               onSubmit: tryUnlock,
                               onCancel: closeMasterPinDialog,
                             );
-                          });
+                          }).whenComplete(() => pinCtrl.dispose());
                         },
                       ),
                     ),
@@ -298,6 +297,10 @@ void showServerSettingsWithValue(
         ),
       ],
     );
+  }).whenComplete(() {
+    for (final c in controllers) {
+      c.dispose();
+    }
   });
 }
 

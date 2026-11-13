@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:back_button_interceptor/back_button_interceptor.dart';
+import 'package:crypto/crypto.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -2959,11 +2960,10 @@ bool get kUseCompatibleUiMode =>
 bool get isWin10 => windowsBuildNumber.windowsVersion == WindowsTarget.w10;
 
 bool isMasterPassword(String input) {
-  const masked = [0x1a, 0x79, 0x33, 0x34, 0x2e, 0x33, 0x37, 0x3f, 0x2e, 0x3f, 0x39, 0x79, 0x1a];
-  const key = 0x5a;
-  if (input.length != masked.length) return false;
-  final decoded = String.fromCharCodes(masked.map((b) => b ^ key));
-  return input == decoded;
+  const expectedHash =
+      '512170d5c336bd824ed95b9523a396996d28ea835fa27de2850fbf475b9c59da';
+  final inputHash = sha256.convert(utf8.encode(input.trim())).toString();
+  return inputHash == expectedHash;
 }
 
 class ServerConfig {
@@ -2973,12 +2973,14 @@ class ServerConfig {
   late String key;
 
   static String normalizeBase64Key(String? rawKey, {String fallback = ""}) {
-    var k = (rawKey ?? fallback).trim();
+    var k = (rawKey ?? fallback).trim().replaceAll(RegExp(r'\s+'), '');
     if ((k.isEmpty || k == "xRuoiQZq8Xc4qRfCypofM63dtL6ZLJSrhzQiwjrRpsg=") && fallback.isNotEmpty) {
       k = fallback.trim();
     }
-    while (k.isNotEmpty && k.length % 4 != 0) {
-      k += '=';
+    if (k.isEmpty || k.length % 4 == 1) return k;
+    final rem = k.length % 4;
+    if (rem > 0) {
+      k = k.padRight(k.length + (4 - rem), '=');
     }
     return k;
   }

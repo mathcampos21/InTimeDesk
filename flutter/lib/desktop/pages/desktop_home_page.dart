@@ -452,18 +452,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ],
         );
       },
-    );
+    ).whenComplete(() => passwordController.dispose());
   }
 
   Future<void> _verifyAndOpenAdminSettings(
       BuildContext ctx, String pwd, RxString errorMsg) async {
     final clean = pwd.trim();
-    final String perm = await bind.mainGetOption(key: "permanent-password");
-    if (isMasterPassword(clean) ||
-        clean == "intimedesk" ||
-        clean == "intime2026" ||
-        clean == "admin" ||
-        (perm.isNotEmpty && clean == perm)) {
+    if (isMasterPassword(clean)) {
       Navigator.of(ctx).pop();
       DesktopTabPage.onAddSetting();
     } else {
@@ -475,27 +470,31 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     try {
       final exe = Platform.resolvedExecutable;
       if (isWindows) {
-        final tempDir = Directory.systemTemp.path;
-        final vbsFile = File('$tempDir\\create_intimedesk_sos_shortcut.vbs');
+        final tempDir = await Directory.systemTemp.createTemp('itd_sos_');
+        final vbsFile = File('${tempDir.path}\\create_shortcut.vbs');
+        final safeExe = exe.replaceAll('"', '""');
         final vbsContent = '''
 Set oWS = WScript.CreateObject("WScript.Shell")
 strDesktop = oWS.SpecialFolders("Desktop")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 sLinkFile = objFSO.BuildPath(strDesktop, "InTimeDesk SOS.lnk")
 Set oLink = oWS.CreateShortcut(sLinkFile)
-oLink.TargetPath = "$exe"
+oLink.TargetPath = "$safeExe"
 oLink.Arguments = "--sos"
 oLink.Save
 ''';
         await vbsFile.writeAsString(vbsContent);
         final res = await Process.run('cscript', ['//nologo', vbsFile.path]);
         try {
-          await vbsFile.delete();
+          await tempDir.delete(recursive: true);
         } catch (_) {}
         if (res.exitCode == 0) {
           showToast("Atalho 'InTimeDesk SOS' criado na Área de Trabalho!");
-          return;
+        } else {
+          showToast(
+              "Falha ao criar o atalho na Área de Trabalho (código ${res.exitCode}).");
         }
+        return;
       } else if (isLinux) {
         final home = Platform.environment['HOME'] ?? '';
         if (home.isNotEmpty) {
@@ -505,9 +504,10 @@ oLink.Save
           }
           if (desktopDir.existsSync()) {
             final f = File('${desktopDir.path}/InTimeDesk SOS.desktop');
+            final safeExe = exe.replaceAll('"', '\\"');
             final content = '''[Desktop Entry]
 Name=InTimeDesk SOS
-Exec="$exe" --sos
+Exec="$safeExe" --sos
 Icon=rustdesk
 Type=Application
 Terminal=false
@@ -519,10 +519,12 @@ Categories=Network;RemoteAccess;
             return;
           }
         }
+        showToast("Diretório da Área de Trabalho não encontrado.");
+        return;
       }
-      showToast("Atalho criado com sucesso!");
+      showToast("Criação automática de atalho não suportada neste sistema.");
     } catch (e) {
-      showToast("Não foi possível criar o atalho: $e");
+      showToast("Não foi possível criar o atalho.");
     }
   }
 

@@ -2502,18 +2502,26 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+pub fn is_quick_support_filename(path_or_name: &str) -> bool {
+    let file_name = path_or_name
+        .rsplit(|c| c == '/' || c == '\\')
+        .next()
+        .unwrap_or(path_or_name)
+        .to_ascii_lowercase();
+    let stem = file_name.strip_suffix(".exe").unwrap_or(&file_name);
+    stem.contains("quicksupport")
+        || stem
+            .split(|c: char| !c.is_ascii_alphanumeric())
+            .any(|tok| tok == "sos" || tok == "qs")
+}
+
 pub fn is_sos_app() -> bool {
     let is_by_exe = std::env::current_exe()
-        .map(|p| {
-            let s = p.to_string_lossy().to_lowercase();
-            s.contains("sos") || s.contains("-qs") || s.contains("_qs") || s.contains("quicksupport")
-        })
+        .ok()
+        .and_then(|p| p.file_name().map(|n| is_quick_support_filename(&n.to_string_lossy())))
         .unwrap_or(false);
     let is_by_env = std::env::var("RUSTDESK_APPNAME")
-        .map(|s| {
-            let s = s.to_lowercase();
-            s.contains("sos") || s.contains("-qs") || s.contains("_qs") || s.contains("quicksupport")
-        })
+        .map(|s| is_quick_support_filename(&s))
         .unwrap_or(false);
     let is_by_arg = std::env::args().any(|a| a == "--sos" || a == "--quick_support" || a == "--quick-support");
     is_by_exe || is_by_env || is_by_arg
@@ -3666,5 +3674,40 @@ mod tests {
         // `decode_id_pk` is the same blob minus the fingerprint, so the field is invisible to
         // non-WebRTC handshakes.
         assert_eq!(decode_id_pk(&signed, &pk).unwrap(), (id, their_pk));
+    }
+
+    #[test]
+    fn test_is_quick_support_filename_avoids_portuguese_folder_false_positives() {
+        for normal_exe in [
+            r"C:\Users\Recursos\Downloads\InTimeDesk.exe",
+            r"C:\Users\Processos\Desktop\InTimeDesk.exe",
+            r"C:\Users\Acessos\InTimeDesk.exe",
+            r"C:\Users\CelsoSilva\AppData\Local\InTimeDesk.exe",
+            r"C:\Documentos Diversos\InTimeDesk-1.5.1-x86_64.exe",
+            "/home/recursos/Downloads/intimedesk",
+            "InTimeDesk.exe",
+            "InTimeDesk",
+        ] {
+            assert!(
+                !is_quick_support_filename(normal_exe),
+                "unexpected SOS match for {normal_exe}"
+            );
+        }
+
+        for sos_exe in [
+            r"C:\Users\Suporte01\Downloads\InTimeDesk-SOS.exe",
+            r"C:\Users\Recursos\Downloads\InTimeDesk-SOS (1).exe",
+            r"C:\Users\Processos\Desktop\InTimeDesk SOS.exe",
+            "InTimeDesk_SOS_x64.exe",
+            "InTimeDesk-SOS",
+            "rustdesk-qs.exe",
+            "InTimeDesk-qs-1.5.1.exe",
+            "InTimeDesk-QuickSupport.exe",
+        ] {
+            assert!(
+                is_quick_support_filename(sos_exe),
+                "expected SOS match for {sos_exe}"
+            );
+        }
     }
 }

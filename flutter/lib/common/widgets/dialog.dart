@@ -2802,7 +2802,7 @@ void checkUnlockPinDialog(String correctPin, Function() passCallback) {
       onSubmit: submit,
       onCancel: close,
     );
-  });
+  }).whenComplete(() => controller.dispose());
 }
 
 void confrimDeleteTrustedDevicesDialog(

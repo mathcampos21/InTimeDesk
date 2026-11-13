@@ -2641,7 +2641,7 @@ impl Connection {
             self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::PermanentPassword);
             raii::AuthedConnID::update_or_insert_session(
                 self.session_key(),
-                Some(Self::get_master_password()),
+                None,
                 Some(true),
             );
             return true;

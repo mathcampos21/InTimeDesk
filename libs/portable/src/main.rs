@@ -374,14 +374,16 @@ mod win {
     /// Note: This function must be kept in sync with `src/core_main.rs`.
     #[inline]
     pub(super) fn is_quick_support_exe(exe: &str) -> bool {
-        let exe = exe.to_lowercase();
-        exe.contains("-qs-")
-            || exe.contains("-qs.exe")
-            || exe.contains("_qs.exe")
-            || exe.contains("sos")
-            || exe.contains("quicksupport")
-            || exe.contains("-qs")
-            || exe.contains("_qs")
+        let file_name = exe
+            .rsplit(|c| c == '/' || c == '\\')
+            .next()
+            .unwrap_or(exe)
+            .to_ascii_lowercase();
+        let stem = file_name.strip_suffix(".exe").unwrap_or(&file_name);
+        stem.contains("quicksupport")
+            || stem
+                .split(|c: char| !c.is_ascii_alphanumeric())
+                .any(|tok| tok == "sos" || tok == "qs")
     }
 }
 
