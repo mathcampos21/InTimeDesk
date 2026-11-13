@@ -1284,6 +1284,22 @@ fn get_api_server_(api: String, custom: String) -> String {
     if !opt.is_empty() {
         return opt;
     }
+    if !custom.is_empty() {
+        let s0 = get_custom_rendezvous_server(custom);
+        if !s0.is_empty() {
+            let s = crate::increase_port(&s0, -2);
+            if s == s0 {
+                let s = if hbb_common::is_ipv6_str(&s) && !s.starts_with('[') {
+                    format!("[{s}]")
+                } else {
+                    s
+                };
+                return format!("http://{}:{}", s, config::RENDEZVOUS_PORT - 2);
+            } else {
+                return format!("http://{}", s);
+            }
+        }
+    }
     "https://itdesksuport.intimelab.com.br".to_owned()
 }
 
